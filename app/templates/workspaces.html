@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+<form method="POST" action="/workspaces">
+  <button class="button is-block">Create new workspace</button>
+</form> 
+{% for workspace in query_result %}
+<div class="is-flex is-align-items-center">
+  <a href="#">
+    <h2 class="subtitle">{{ workspace['name'] }}</h2>
+  </a>
+  <form method="PUT" action="/workspaces">
+    <button class="button is-block">Update</button>
+  </form>
+  <form method="DELETE" action="/workspaces">
+    <button class="button is-block">Delete</button>
+  </form>
+</div>
+{% endfor %}
+{% endblock %}

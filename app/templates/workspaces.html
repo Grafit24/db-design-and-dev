@@ -1,20 +1,80 @@
 {% extends "base.html" %}
 
+{% block nav %}
+<button class="button is-block is-success js-modal-trigger" data-target="modal-create">New workspace</button>
+{% endblock %}
+
 {% block content %}
-<form method="POST" action="/workspaces">
-  <button class="button is-block">Create new workspace</button>
-</form> 
+<div id="modal-create" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-content">
+        <div class="box">
+            <form method="POST" action="/workspaces/create">
+                <div class="field">
+                    <div class="control">
+                        <input class="input is-medium" type="text" name="workspace_name" placeholder="Workspace name" autofocus="">
+                    </div>
+                </div>
+
+                <!--TODO: Add users choice-->
+
+                <button class="button is-block is-info is-medium is-fullwidth">Create workspace</button>
+            </form>
+        </div>
+    </div>
+  
+    <button class="modal-close is-large" aria-label="close"></button>
+</div>
 {% for workspace in query_result %}
-<div class="is-flex is-align-items-center">
-  <a href="#">
-    <h2 class="subtitle">{{ workspace['name'] }}</h2>
-  </a>
-  <form method="PUT" action="/workspaces">
-    <button class="button is-block">Update</button>
-  </form>
-  <form method="DELETE" action="/workspaces">
-    <button class="button is-block">Delete</button>
-  </form>
+<div>
+<a href="#" class="title">{{ ("💎" if workspace["is_owner"] else "") + workspace['name'] + ("💎" if workspace["is_owner"] else "") }}</a>
 </div>
 {% endfor %}
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Functions to open and close a modal
+  function openModal($el) {
+    $el.classList.add('is-active');
+  }
+
+  function closeModal($el) {
+    $el.classList.remove('is-active');
+  }
+
+  function closeAllModals() {
+    (document.querySelectorAll('.modal') || []).forEach(($modal) => {
+      closeModal($modal);
+    });
+  }
+
+  // Add a click event on buttons to open a specific modal
+  (document.querySelectorAll('.js-modal-trigger') || []).forEach(($trigger) => {
+    const modal = $trigger.dataset.target;
+    const $target = document.getElementById(modal);
+
+    $trigger.addEventListener('click', () => {
+      openModal($target);
+    });
+  });
+
+  // Add a click event on various child elements to close the parent modal
+  (document.querySelectorAll('.modal-background, .modal-close, .modal-card-head .delete, .modal-card-foot .button') || []).forEach(($close) => {
+    const $target = $close.closest('.modal');
+
+    $close.addEventListener('click', () => {
+      closeModal($target);
+    });
+  });
+
+  // Add a keyboard event to close all modals
+  document.addEventListener('keydown', (event) => {
+    const e = event || window.event;
+
+    if (e.keyCode === 27) { // Escape key
+      closeAllModals();
+    }
+  });
+});
+</script>
 {% endblock %}

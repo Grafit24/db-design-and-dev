@@ -31,7 +31,7 @@ def workspaces():
 def create_workspace():
     workspace_name = request.form.get('workspace_name')
     workspace = Workspaces(workspace_name=workspace_name)
-    
+
     db.session.add(workspace)
     db.session.flush()
     db.session.refresh(workspace)
@@ -46,6 +46,22 @@ def create_workspace():
     db.session.commit()
 
     return redirect(url_for("main.workspaces"))
+
+
+@main.route("/workspaces/workspace-<int:workspace_id>")
+@login_required
+def view_workspace(workspace_id):
+    query = """
+    SELECT *
+    FROM workspaces_users 
+        INNER JOIN orders ON workspaces_users.id = orders.workspaces_users_id
+        INNER JOIN orders_servers ON orders.order_id = orders_servers.order_id
+        INNER JOIN servers ON orders_servers.server_id = servers.server_id
+        INNER JOIN servers_configuration ON servers_configuration.server_conf_id = servers.server_conf_id
+    WHERE workspaces_users.workspace_id=%s ORDER BY opened_on DESC;
+    """
+    result = db.engine.execute(query, workspace_id).fetchall()
+    return render_template("workspace.html", query_result=result)
 
 
 @main.route("/workspaces/update", methods=["PUT"])

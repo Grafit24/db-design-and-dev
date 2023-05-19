@@ -27,7 +27,9 @@
 </div>
 {% for workspace in query_result %}
 <div>
-<a href="#" class="title">{{ ("💎" if workspace["is_owner"] else "") + workspace['name'] + ("💎" if workspace["is_owner"] else "") }}</a>
+<a href="{{ url_for('main.view_workspace', workspace_id=workspace['id']) }}" class="title">
+  {{ ("💎" if workspace["is_owner"] else "") + workspace['name'] + ("💎" if workspace["is_owner"] else "") }}
+</a>
 </div>
 {% endfor %}
 

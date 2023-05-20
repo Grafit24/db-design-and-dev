@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 
 {% block nav %}
-<button class="button is-block is-success js-modal-trigger" data-target="modal-create">New </button>
+<button class="button is-block is-success js-modal-trigger" data-target="modal-create">New order</button>
+<div class="level-item">
+  <p class="subtitle is-5">{{ workspace_name }}</p>
+</div>
 {% endblock %}
 
 {% block content %}
@@ -19,7 +22,7 @@
 
                 <!--TODO: Add users choice-->
 
-                <button class="button is-block is-info is-medium is-fullwidth">Create workspace</button>
+                <button class="button is-block is-info is-medium is-fullwidth">Buy</button>
             </form>
         </div>
     </div>

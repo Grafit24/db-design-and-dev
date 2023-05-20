@@ -48,9 +48,9 @@ def create_workspace():
     return redirect(url_for("main.workspaces"))
 
 
-@main.route("/workspaces/workspace-<int:workspace_id>")
+@main.route("/workspaces/workspace-<int:workspace_id>-<string:workspace_name>")
 @login_required
-def view_workspace(workspace_id):
+def view_workspace(workspace_id, workspace_name):
     query = """
     SELECT *
     FROM workspaces_users 
@@ -61,7 +61,7 @@ def view_workspace(workspace_id):
     WHERE workspaces_users.workspace_id=%s ORDER BY opened_on DESC;
     """
     result = db.engine.execute(query, workspace_id).fetchall()
-    return render_template("workspace.html", query_result=result)
+    return render_template("workspace.html", query_result=result, workspace_name=workspace_name)
 
 
 @main.route("/workspaces/update", methods=["PUT"])

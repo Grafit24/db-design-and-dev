@@ -1,15 +1,18 @@
 {% extends "base.html" %}
 
 {% block nav %}
+<div class="navbar-item">
 <button class="button is-block is-success js-modal-trigger" data-target="modal-create">New workspace</button>
+</div>
 {% endblock %}
 
 {% block content %}
 <div id="modal-create" class="modal">
     <div class="modal-background"></div>
     <div class="modal-content">
+        <p class="title">New workspace</p>
         <div class="box">
-            <form method="POST" action="/workspaces/create">
+            <form method="POST" action="{{ url_for('main.create_workspace') }}">
                 <div class="field">
                     <div class="control">
                         <input class="input is-medium" type="text" name="workspace_name" placeholder="Workspace name" autofocus="">

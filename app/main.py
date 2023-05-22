@@ -61,16 +61,24 @@ def view_workspace(workspace_id, workspace_name):
     WHERE workspaces_users.workspace_id=%s ORDER BY opened_on DESC;
     """
     result = db.engine.execute(query, workspace_id).fetchall()
-    return render_template("workspace.html", query_result=result, workspace_name=workspace_name)
+    return render_template(
+        "workspace.html", query_result=result, 
+        workspace_name=workspace_name, workspace_id=workspace_id
+    )
 
 
-@main.route("/workspaces/update", methods=["PUT"])
+@main.route("/workspaces/workspace-<int:workspace_id>-<string:workspace_name>/update", methods=["POST"])
 @login_required
-def update_workspace():
-    ...
+def update_workspace(workspace_id, workspace_name):
+    new_workspace_name = request.form.get("workspace_name")
+    query = "UPDATE workspaces SET workspace_name=%s WHERE id=%s;"
+    db.engine.execute(query, new_workspace_name, workspace_id)
+    return redirect(url_for("main.view_workspace", workspace_id=workspace_id, workspace_name=new_workspace_name))
 
 
-@main.route("/workspaces/delete", methods=["DELETE"])
+@main.route("/workspaces/workspace-<int:workspace_id>-<string:workspace_name>/delete", methods=["POST"])
 @login_required
-def delete_workspace():
-    ...
+def delete_workspace(workspace_id, workspace_name):
+    query = "DELETE FROM workspaces WHERE id=%s;"
+    db.engine.execute(query, workspace_id)
+    return redirect(url_for("main.workspaces"))

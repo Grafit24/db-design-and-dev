@@ -1,19 +1,25 @@
 {% extends "base.html" %}
 
 {% block nav %}
-<button class="button is-block is-success js-modal-trigger" data-target="modal-create">New order</button>
-<div class="level-item">
+<div class="navbar-item">
+  <button class="button is-block is-success js-modal-trigger" data-target="modal-create">New order</button>
+</div>
+<div class="navbar-item">
   <p class="subtitle is-5">{{ workspace_name }}</p>
+</div>
+<div class="navbar-item">
+<button class="button is-block is-dark is-light js-modal-trigger" data-target="modal-edit">Edit</button>
 </div>
 {% endblock %}
 
 {% block content %}
 <div class="container">
-<div id="modal-create" class="modal">
+<div id="modal-edit" class="modal">
     <div class="modal-background"></div>
     <div class="modal-content">
+        <p class="title">{{ workspace_name }}</p>
         <div class="box">
-            <form method="POST" action="">
+            <form method="POST" action="{{url_for('main.update_workspace', workspace_id=workspace_id, workspace_name=workspace_name)}}">
                 <div class="field">
                     <div class="control">
                         <input class="input is-medium" type="text" name="workspace_name" placeholder="Workspace name" autofocus="">
@@ -22,7 +28,10 @@
 
                 <!--TODO: Add users choice-->
 
-                <button class="button is-block is-info is-medium is-fullwidth">Buy</button>
+                <button class="button is-block is-info is-medium is-fullwidth">Update</button>
+            </form>
+            <form method="POST" action="{{url_for('main.delete_workspace', workspace_id=workspace_id, workspace_name=workspace_name)}}">
+              <button class="button is-block is-danger is-medium is-fullwidth">Delete</button>
             </form>
         </div>
     </div>

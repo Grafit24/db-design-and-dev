@@ -2,7 +2,7 @@
 
 {% block nav %}
 <div class="navbar-item">
-  <button class="button is-block is-success js-modal-trigger" data-target="modal-create">New order</button>
+  <button id="new-order-button" class="button is-block is-success js-modal-trigger" data-target="modal-new-order">New order</button>
 </div>
 <div class="navbar-item">
   <p class="subtitle is-5">{{ workspace_name }}</p>
@@ -19,16 +19,16 @@
     <div class="modal-content">
         <p class="title">{{ workspace_name }}</p>
         <div class="box">
-            <form method="POST" action="{{url_for('main.update_workspace', workspace_id=workspace_id, workspace_name=workspace_name)}}">
-                <div class="field">
-                    <div class="control">
-                        <input class="input is-medium" type="text" name="workspace_name" placeholder="Workspace name" autofocus="">
-                    </div>
-                </div>
+          <form method="POST" action="{{url_for('main.update_workspace', workspace_id=workspace_id, workspace_name=workspace_name)}}">
+              <div class="field">
+                  <div class="control">
+                      <input class="input is-medium" type="text" name="workspace_name" placeholder="Workspace name" autofocus="">
+                  </div>
+              </div>
 
-                <!--TODO: Add users choice-->
+              <!--TODO: Add users choice-->
 
-                <button class="button is-block is-info is-medium is-fullwidth">Update</button>
+              <button class="button is-block is-info is-medium is-fullwidth">Update</button>
             </form>
             <form method="POST" action="{{url_for('main.delete_workspace', workspace_id=workspace_id, workspace_name=workspace_name)}}">
               <button class="button is-block is-danger is-medium is-fullwidth">Delete</button>
@@ -38,6 +38,19 @@
   
     <button class="modal-close is-large" aria-label="close"></button>
 </div>
+
+<div class="container">
+  <div id="modal-new-order" class="modal">
+      <div class="modal-background"></div>
+      <div class="modal-content">
+          <p class="title">{{ workspace_name }}</p>
+          <div class="box">
+            <div class="mychange"></div>
+          </div>
+      </div>
+    
+      <button class="modal-close is-large" aria-label="close"></button>
+  </div>
 
 <table class="table is-hoverable is-striped is-bordered table is-fullwidth">
     <thead>
@@ -70,51 +83,7 @@
     </tbody>
   </table>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  // Functions to open and close a modal
-  function openModal($el) {
-    $el.classList.add('is-active');
-  }
-
-  function closeModal($el) {
-    $el.classList.remove('is-active');
-  }
-
-  function closeAllModals() {
-    (document.querySelectorAll('.modal') || []).forEach(($modal) => {
-      closeModal($modal);
-    });
-  }
-
-  // Add a click event on buttons to open a specific modal
-  (document.querySelectorAll('.js-modal-trigger') || []).forEach(($trigger) => {
-    const modal = $trigger.dataset.target;
-    const $target = document.getElementById(modal);
-
-    $trigger.addEventListener('click', () => {
-      openModal($target);
-    });
-  });
-
-  // Add a click event on various child elements to close the parent modal
-  (document.querySelectorAll('.modal-background, .modal-close, .modal-card-head .delete, .modal-card-foot .button') || []).forEach(($close) => {
-    const $target = $close.closest('.modal');
-
-    $close.addEventListener('click', () => {
-      closeModal($target);
-    });
-  });
-
-  // Add a keyboard event to close all modals
-  document.addEventListener('keydown', (event) => {
-    const e = event || window.event;
-
-    if (e.keyCode === 27) { // Escape key
-      closeAllModals();
-    }
-  });
-});
-</script>
+<script src="{{ url_for('static', filename='js/modal-js-script.js') }}"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
 </div>
 {% endblock %}

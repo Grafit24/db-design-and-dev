@@ -82,3 +82,24 @@ def delete_workspace(workspace_id, workspace_name):
     query = "DELETE FROM workspaces WHERE id=%s;"
     db.engine.execute(query, workspace_id)
     return redirect(url_for("main.workspaces"))
+
+
+@main.route("/workspaces/workspace-<int:workspace_id>-<string:workspace_name>/buy", methods=["POST"])
+@login_required
+def buy_server(workspace_id, workspace_name):
+    servers_id = request.form.get("server_id")
+    open = request.form.get("open_datetime")
+    close = request.form.get("close_datetime")
+    ...
+
+@main.route("/get-servers")
+@login_required
+def get_servers():
+    query = """
+    SELECT DISTINCT servers.server_conf_id AS server_conf_id, cpu, gpu, ram_mb, ssd_storage_mb, os FROM 
+        servers_configuration INNER JOIN servers 
+        ON servers.server_conf_id = servers_configuration.server_conf_id
+        WHERE servers.closed_on < NOW();
+    """
+    results = db.engine.execute(query).fetchall()
+    return render_template("servers-template.html", results=results)

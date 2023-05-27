@@ -85,5 +85,12 @@
 
 <script src="{{ url_for('static', filename='js/modal-js-script.js') }}"></script>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
+<script>
+  $('#new-order-button').click( function() {
+    $.get('{{ url_for("main.get_servers") }}', function(data) {
+      $('.mychange').html($(data));
+  });
+});
+</script>
 </div>
 {% endblock %}

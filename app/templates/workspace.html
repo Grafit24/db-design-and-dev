@@ -13,6 +13,7 @@
 {% endblock %}
 
 {% block content %}
+<!-- Flash for errors -->
 <div class="container">
 <div id="modal-edit" class="modal">
     <div class="modal-background"></div>
@@ -39,17 +40,25 @@
     <button class="modal-close is-large" aria-label="close"></button>
 </div>
 
+<!-- TODO: Checker for correct input! -->
 <div class="container">
   <div id="modal-new-order" class="modal">
-      <div class="modal-background"></div>
-      <div class="modal-content">
-          <p class="title">{{ workspace_name }}</p>
-          <div class="box">
-            <div class="mychange"></div>
-          </div>
+    <div class="modal-background"></div>
+    <form action="{{url_for('main.buy_server', workspace_id=workspace_id, workspace_name=workspace_name)}}" method="POST">
+    <div class="modal-content box">
+      <div class="field">
+        <div class="mychange"></div>
       </div>
-    
-      <button class="modal-close is-large" aria-label="close"></button>
+      <div class="field">
+        <label class="label">To what date do you want to rent a server?</label>
+        <div class="control">
+          <input type="date" class="input" name="close_datetime">
+        </div>
+      </div>
+      <button class="button is-primary is-block is-large is-fullwidth">Buy</button>
+    </div>
+    </form>
+    <button class="modal-close is-large" aria-label="close"></button>
   </div>
 
 <table class="table is-hoverable is-striped is-bordered table is-fullwidth">
@@ -86,9 +95,33 @@
 <script src="{{ url_for('static', filename='js/modal-js-script.js') }}"></script>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
 <script>
+  function generate_server_settup(data) {
+    let result_html_str = ''
+    for (var idx in data) {
+      result_html_str = result_html_str.concat(`
+      <div class="container box">
+        <div class="columns container">
+          <div class="column">ID <b>${ data[idx]['server_conf_id'] }</b></div>
+          <div class="column is-four-fifths">${ data[idx]['cpu'] } ${ data[idx]['gpu'] }</div>
+        </div>
+        <div class="columns container">
+          <div class="column">RAM: ${ Math.floor(data[idx]['ram_mb'] / 1000) } GB</div>
+          <div class="column">SSD: ${ Math.floor(data[idx]['ssd_storage_mb'] / 1000) } GB</div>
+          <div class="column">OS: ${ data[idx]['os'] }</div>
+        </div>
+        <label class="column button control">
+            ${ data[idx]['price'] } rub
+            <input type="radio" name="server_choice" value="${ data[idx]['server_conf_id'] }">
+        </label>
+      </div>
+      `)
+    }
+    return result_html_str
+  }
+
   $('#new-order-button').click( function() {
     $.get('{{ url_for("main.get_servers") }}', function(data) {
-      $('.mychange').html($(data));
+      $('.mychange').html(generate_server_settup(data));
   });
 });
 </script>

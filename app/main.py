@@ -1,7 +1,9 @@
-from flask import Blueprint, render_template, url_for, request, redirect
+from datetime import datetime as dt
+from sqlalchemy import desc
+from flask import Blueprint, render_template, url_for, request, redirect, jsonify
 from flask_login import login_required, current_user
 from . import db
-from .models import Workspaces, WorkspacesUsers
+from .models import *
 
 main = Blueprint('main', __name__)
 
@@ -9,10 +11,12 @@ main = Blueprint('main', __name__)
 def index():
     return render_template("index.html")
 
+
 @main.route('/profile')
 @login_required
 def profile():
     return render_template("profile.html", login=current_user.login)
+
 
 @main.route('/workspaces')
 @login_required
@@ -25,6 +29,7 @@ def workspaces():
     login = current_user.get_id()
     result = db.engine.execute(query, login).fetchall()
     return render_template("workspaces.html", query_result=result)
+
 
 @main.route("/workspaces/create", methods=["POST"])
 @login_required
@@ -87,19 +92,40 @@ def delete_workspace(workspace_id, workspace_name):
 @main.route("/workspaces/workspace-<int:workspace_id>-<string:workspace_name>/buy", methods=["POST"])
 @login_required
 def buy_server(workspace_id, workspace_name):
-    servers_id = request.form.get("server_id")
-    open = request.form.get("open_datetime")
-    close = request.form.get("close_datetime")
-    ...
+    server_conf_id = request.form.getlist("server_choice")[0]
+    close_date = request.form.get("close_datetime")
+    close_date = dt.strptime(close_date, '%Y-%m-%d')
+    price = ServerConfig.query.filter_by(server_conf_id=server_conf_id).first().price
+
+    full_price = (close_date - dt.now()).days * price
+
+    workspaces_users_id = WorkspacesUsers.query.filter_by(workspace_id=workspace_id, user_id=current_user.id).first().id
+
+    order = Order(price_rub=full_price, workspaces_users_id=workspaces_users_id)
+    db.session.add(order)
+    db.session.flush()
+    db.session.refresh(order)
+
+    server_id = Server.query.filter_by(server_conf_id=server_conf_id, server_on=True).first().server_id
+    order_server = OrdersServers(order_id=order.order_id, server_id=server_id, closed_on=close_date)
+    db.session.add(order_server)
+    db.session.commit()
+    return redirect(url_for("main.view_workspace", workspace_id=workspace_id, workspace_name=workspace_name))
 
 @main.route("/get-servers")
 @login_required
 def get_servers():
     query = """
-    SELECT DISTINCT servers.server_conf_id AS server_conf_id, cpu, gpu, ram_mb, ssd_storage_mb, os FROM 
-        servers_configuration INNER JOIN servers 
-        ON servers.server_conf_id = servers_configuration.server_conf_id
-        WHERE servers.closed_on < NOW();
+    SELECT * FROM (
+        SELECT servers_configuration.server_conf_id AS server_conf_id, cpu, gpu, ram_mb, ssd_storage_mb, os, price, MAX(closed_on) as closed_on 
+                FROM servers_configuration 
+                INNER JOIN servers ON servers.server_conf_id = servers_configuration.server_conf_id
+                INNER JOIN orders_servers ON orders_servers.server_id = servers.server_id
+                WHERE servers.server_on
+                GROUP BY servers_configuration.server_conf_id
+    ) AS servers_closed_on WHERE closed_on < NOW();
     """
     results = db.engine.execute(query).fetchall()
-    return render_template("servers-template.html", results=results)
+    print(results)
+    results = [dict(res) for res in results]
+    return jsonify(results)

@@ -18,6 +18,39 @@ def profile():
     return render_template("profile.html", login=current_user.login)
 
 
+@main.route('/admin')
+@login_required
+def admin():
+    if not current_user.admin:
+        redirect(url_for("main.profile"))
+    results = ServerConfig.query.all()
+    return render_template("admin.html", results=results)
+
+
+@main.route("/admin/create", methods=["POST"])
+@login_required
+def create_config():
+    if not current_user.admin:
+        return redirect(url_for("main.profile"))
+    cpu = request.form.get("cpu", type=str)
+    gpu = request.form.get("gpu", type=str)
+    ram_mb = request.form.get("ram", type=int)
+    ssd_storage_mb = request.form.get("ssd", type=int)
+    os = request.form.get("os", type=str)
+    price = request.form.get("price", type=int)
+    new_server_config = ServerConfig(
+        cpu=cpu, 
+        gpu=gpu, 
+        ram_mb=ram_mb, 
+        ssd_storage_mb=ssd_storage_mb, 
+        os=os, 
+        price=price
+    )
+    db.session.add(new_server_config)
+    db.session.commit()
+    return redirect(url_for("main.admin"))
+
+
 @main.route('/workspaces')
 @login_required
 def workspaces():

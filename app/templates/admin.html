@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block nav %}
+<div class="navbar-item">
+    <button class="button is-block is-success js-modal-trigger" data-target="modal-create">New config</button>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div id="modal-create" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-content">
+        <p class="title">New config</p>
+        <div class="box">
+            <form method="POST" action="{{ url_for('main.create_config') }}">
+                <div class="field">
+                    <label class="label">CPU:</label>
+                    <div class="control">
+                        <input class="input is-medium" type="text" name="cpu" placeholder="CPU" autofocus="">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">GPU:</label>
+                    <div class="control">
+                        <input class="input is-medium" type="text" name="gpu" placeholder="GPU" autofocus="">
+                    </div>
+                </div>
+                
+                <!--In fully db it will be generated-->
+                <div class="field">
+                    <label class="label">OS:</label>
+                    <div class="control">
+                      <div class="select">
+                        <select name="os">
+                          <option value="Windows">Windows</option>
+                          <option value="Debian">Debian</option>
+                          <option value="Ubuntu">Ubuntu</option>
+                          <option value="Astra Linux">Astra Linux</option>
+                        </select>
+                      </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">RAM:</label>
+                    <div class="control">
+                        <input name="ram" class="number is-medium" min="8000" max="256000" type="number" placeholder="RAM in mb">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">SSD:</label>
+                    <div class="control">
+                        <input name="ssd" class="number is-medium" type="number" placeholder="SSD in mb">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Price:</label>
+                    <div class="control">
+                        <input name="price" class="number is-medium" type="number" placeholder="Price in rubels">
+                    </div>
+                </div>
+
+                <button class="button is-block is-info is-medium is-fullwidth">Create config</button>
+            </form>
+        </div>
+    </div>
+  
+    <button class="modal-close is-large" aria-label="close"></button>
+</div>
+
+<div class="content columns is-multiline">
+    {% for result in results %}
+    <div class="column container">
+        <div class="box">
+        <div class="columns container">
+          <div class="column">ID <b>{{ result['server_conf_id'] }}</b></div>
+          <div class="column is-four-fifths">{{ result['cpu'] }} {{ result['gpu'] }}</div>
+        </div>
+        <div class="columns container">
+          <div class="column">RAM: {{ "%0.1f" % (result['ram_mb'] / 1000)|float }} GB</div>
+          <div class="column">SSD: {{ "%0.1f" % (result['ssd_storage_mb'] / 1000)|float }} GB</div>
+          <div class="column">OS: {{ result['os'] }}</div>
+          <div class="column">Price: {{ result['price'] }} rub</div>
+        </div>
+        <a class="button is-primary" href="">Edit</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script src="{{ url_for('static', filename='js/modal-js-script.js') }}"></script>
+{% endblock %}

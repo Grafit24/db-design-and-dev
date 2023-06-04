@@ -86,7 +86,22 @@
           <div class="column">OS: {{ result['os'] }}</div>
           <div class="column">Price: {{ result['price'] }} rub</div>
         </div>
-        <a class="button is-primary" href="">Edit</a>
+        <div class="tags are-medium">
+            {% for server in result['servers'] %}
+                {% if not server['is_busy'] and server['server_on'] %}
+                    {% set tag_color = 'is-success' %}
+                {% elif server['is_busy'] and server['server_on'] %}
+                    {% set tag_color = 'is-warning' %}
+                {% else %}
+                    {% set tag_color = 'is-danger' %}
+                {% endif %}
+                <span class="tag {{ tag_color }}">server-{{ server["server_id"] }}</span>
+            {% endfor %}
+        </div class="columns container">
+            <div class="column">
+                <p class="has-text-grey-darker">Order count: {{ result["order_counter"] }}</p>
+            </div>
+            <a class="column button is-primary" href="{{ url_for('main.get_config', config_id=result['server_conf_id']) }}">Edit</a>
         </div>
     </div>
     {% endfor %}

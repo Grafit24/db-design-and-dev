@@ -23,8 +23,42 @@ def profile():
 def admin():
     if not current_user.admin:
         redirect(url_for("main.profile"))
-    results = ServerConfig.query.all()
-    return render_template("admin.html", results=results)
+    query = """
+    SELECT servers_configuration.server_conf_id AS config_id, servers.server_id AS server_id, cpu, gpu, ram_mb, 
+	ssd_storage_mb, os, price, server_on, 
+	MAX(closed_on) > NOW() AS is_busy, COUNT(order_id) AS order_counter FROM
+        servers_configuration 
+        LEFT JOIN servers ON servers.server_conf_id = servers_configuration.server_conf_id
+        LEFT JOIN orders_servers ON servers.server_id = orders_servers.server_id
+		GROUP BY servers_configuration.server_conf_id, servers.server_id;
+    """
+    results = {}
+    query_result = db.engine.execute(query).fetchall()
+    for row in query_result:
+        if results.get(row["config_id"], False):
+            results[row["config_id"]]["servers"].append({
+                        "is_busy": row["is_busy"],
+                        "server_id": row["server_id"],
+                        "server_on": row["server_on"]
+                    })
+        else:
+            results[row["config_id"]] = {
+                "server_conf_id": row["config_id"],
+                "cpu": row["cpu"],
+                "gpu": row["gpu"],
+                "ram_mb": row["ram_mb"],
+                "ssd_storage_mb": row["ssd_storage_mb"],
+                "os": row["os"],
+                "price": row["price"],
+                "order_counter": row["order_counter"],
+                "servers": [] if row["server_id"] is None else [{
+                        "is_busy": row["is_busy"],
+                        "server_id": row["server_id"],
+                        "server_on": row["server_on"]
+                    }],
+            }
+    print(results)
+    return render_template("admin.html", results=list(results.values()))
 
 
 @main.route("/admin/create", methods=["POST"])
@@ -159,6 +193,42 @@ def get_servers():
     ) AS servers_closed_on WHERE closed_on < NOW();
     """
     results = db.engine.execute(query).fetchall()
-    print(results)
     results = [dict(res) for res in results]
     return jsonify(results)
+
+
+@main.route("/admin/config-<int:config_id>")
+@login_required
+def get_config(config_id):
+    if not current_user.admin:
+        return redirect(url_for("main.profile"))
+    query = """
+    SELECT servers_configuration.server_conf_id AS config_id, servers.server_id AS server_id, cpu, gpu, ram_mb, 
+	ssd_storage_mb, os, price, server_on, 
+	MAX(closed_on) > NOW() AS is_busy, COUNT(order_id) AS order_counter FROM
+        servers_configuration 
+        LEFT JOIN servers ON servers.server_conf_id = servers_configuration.server_conf_id
+        LEFT JOIN orders_servers ON servers.server_id = orders_servers.server_id
+		GROUP BY servers_configuration.server_conf_id, servers.server_id
+        WHERE servers_configuration.server_conf_id = %s;
+    """
+    ...
+
+
+@main.route("/admin/config-<int:config_id>/edit", methods=["POST"])
+@login_required
+def edit_config(config_id):
+    if not current_user.admin:
+        return redirect(url_for("main.profile"))
+    ...
+
+
+@main.route("/admin/config-<int:config_id>/delete", methods=["POST"])
+@login_required
+def delete_config(config_id):
+    if not current_user.admin:
+        return redirect(url_for("main.profile"))
+    config = ServerConfig.query.filter_by(server_conf_id=config_id).first()
+    db.session.delete(config)
+    db.session.commit()
+    return redirect(url_for("main.admin"))

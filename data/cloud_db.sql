@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.2
--- Dumped by pg_dump version 15.2
+-- Dumped from database version 15.3
+-- Dumped by pg_dump version 15.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -61,7 +61,9 @@ ALTER SEQUENCE public.orders_order_id_seq OWNED BY public.orders.order_id;
 
 CREATE TABLE public.orders_servers (
     order_id integer NOT NULL,
-    server_id integer NOT NULL
+    server_id integer NOT NULL,
+    opened_on date DEFAULT now() NOT NULL,
+    closed_on date NOT NULL
 );
 
 
@@ -144,8 +146,7 @@ CREATE TABLE public.servers_configuration (
     ram_mb integer NOT NULL,
     ssd_storage_mb integer NOT NULL,
     os character varying(50) NOT NULL,
-    price double precision NOT NULL,
-    server_on boolean DEFAULT true NOT NULL
+    price double precision NOT NULL
 );
 
 
@@ -180,8 +181,7 @@ ALTER SEQUENCE public.server_configuration_server_id_seq OWNED BY public.servers
 CREATE TABLE public.servers (
     server_id integer NOT NULL,
     server_conf_id integer NOT NULL,
-    opened_on timestamp without time zone NOT NULL,
-    closed_on timestamp without time zone NOT NULL
+    server_on boolean DEFAULT true NOT NULL
 );
 
 
@@ -238,7 +238,8 @@ ALTER SEQUENCE public.servers_server_id_seq OWNED BY public.servers.server_id;
 CREATE TABLE public.users (
     id integer NOT NULL,
     login character varying(50) NOT NULL,
-    password character varying(100) NOT NULL
+    password character varying(100) NOT NULL,
+    admin boolean DEFAULT false NOT NULL
 );
 
 
@@ -470,6 +471,10 @@ ALTER TABLE ONLY public.workspaces_users ALTER COLUMN user_id SET DEFAULT nextva
 
 COPY public.orders (order_id, price_rub, workspaces_users_id) FROM stdin;
 1	10000	1
+2	0	2
+4	45000	8
+5	100000	8
+6	0	2
 \.
 
 
@@ -477,8 +482,12 @@ COPY public.orders (order_id, price_rub, workspaces_users_id) FROM stdin;
 -- Data for Name: orders_servers; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.orders_servers (order_id, server_id) FROM stdin;
-1	1
+COPY public.orders_servers (order_id, server_id, opened_on, closed_on) FROM stdin;
+1	1	2023-05-31	2023-05-31
+2	2	2023-05-31	2023-05-31
+4	1	2023-05-31	2023-06-10
+5	2	2023-05-31	2023-06-11
+6	8	2023-06-07	2023-06-08
 \.
 
 
@@ -486,9 +495,12 @@ COPY public.orders_servers (order_id, server_id) FROM stdin;
 -- Data for Name: servers; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.servers (server_id, server_conf_id, opened_on, closed_on) FROM stdin;
-1	1	2023-05-17 20:21:39.514009	2023-05-18 20:21:39.514009
-2	2	2023-05-26 10:03:22.885959	2023-05-26 10:03:22.885959
+COPY public.servers (server_id, server_conf_id, server_on) FROM stdin;
+2	2	t
+1	1	t
+8	4	t
+7	1	t
+9	2	f
 \.
 
 
@@ -496,9 +508,10 @@ COPY public.servers (server_id, server_conf_id, opened_on, closed_on) FROM stdin
 -- Data for Name: servers_configuration; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.servers_configuration (server_conf_id, cpu, gpu, ram_mb, ssd_storage_mb, os, price, server_on) FROM stdin;
-1	Ryzen 9: 5700x	VEGA 56	16384	1048576	Windows	5000	t
-2	Intel Xeon	RTX 4090	32768	1024000	Debian	10000	f
+COPY public.servers_configuration (server_conf_id, cpu, gpu, ram_mb, ssd_storage_mb, os, price) FROM stdin;
+1	Ryzen 9: 5700x	VEGA 56	16384	1048576	Windows	5000
+2	Intel Xeon	RTX 4090	32768	1024000	Debian	10000
+4	Ryzen Thredripper	RTX 4070 TI	16000	500000	Astra Linux	8000
 \.
 
 
@@ -506,9 +519,9 @@ COPY public.servers_configuration (server_conf_id, cpu, gpu, ram_mb, ssd_storage
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.users (id, login, password) FROM stdin;
-1	Sergey	sha256$ROsbJonmUtOhGL7A$5dca25663e1d41438955fde52ed47293505d9ba75e0b969ff381700463b8c122
-2	TestAcc	sha256$PSoMQLgVZKFFn9Ke$0c3e11a708ff5daea839661df6c2e2da71c05f75d83b8b4bcc9e5bcbe8f2aac4
+COPY public.users (id, login, password, admin) FROM stdin;
+2	TestAcc	sha256$PSoMQLgVZKFFn9Ke$0c3e11a708ff5daea839661df6c2e2da71c05f75d83b8b4bcc9e5bcbe8f2aac4	f
+1	Sergey	sha256$ROsbJonmUtOhGL7A$5dca25663e1d41438955fde52ed47293505d9ba75e0b969ff381700463b8c122	t
 \.
 
 
@@ -521,6 +534,7 @@ COPY public.workspaces (id, workspace_name) FROM stdin;
 8	dadsa
 5	Нормальное название
 1	ananananna
+10	SuperServers
 \.
 
 
@@ -533,6 +547,7 @@ COPY public.workspaces_users (id, workspace_id, user_id, is_owner) FROM stdin;
 2	5	1	t
 5	1	2	f
 6	8	2	t
+8	10	1	t
 \.
 
 
@@ -540,7 +555,7 @@ COPY public.workspaces_users (id, workspace_id, user_id, is_owner) FROM stdin;
 -- Name: orders_order_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.orders_order_id_seq', 1, false);
+SELECT pg_catalog.setval('public.orders_order_id_seq', 6, true);
 
 
 --
@@ -568,7 +583,7 @@ SELECT pg_catalog.setval('public.orders_workspaces_users_id_seq', 1, false);
 -- Name: server_configuration_server_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.server_configuration_server_id_seq', 1, false);
+SELECT pg_catalog.setval('public.server_configuration_server_id_seq', 4, true);
 
 
 --
@@ -582,7 +597,7 @@ SELECT pg_catalog.setval('public.servers_server_conf_id_seq', 1, false);
 -- Name: servers_server_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.servers_server_id_seq', 1, false);
+SELECT pg_catalog.setval('public.servers_server_id_seq', 9, true);
 
 
 --
@@ -610,14 +625,14 @@ SELECT pg_catalog.setval('public.workspaces_users_workspace_id_seq', 1, false);
 -- Name: workspaces_users_workspaces_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.workspaces_users_workspaces_user_id_seq', 7, true);
+SELECT pg_catalog.setval('public.workspaces_users_workspaces_user_id_seq', 8, true);
 
 
 --
 -- Name: workspaces_workspace_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.workspaces_workspace_id_seq', 9, true);
+SELECT pg_catalog.setval('public.workspaces_workspace_id_seq', 10, true);
 
 
 --

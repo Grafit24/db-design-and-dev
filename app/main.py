@@ -57,7 +57,6 @@ def admin():
                         "server_on": row["server_on"]
                     }],
             }
-    print(results)
     return render_template("admin.html", results=list(results.values()))
 
 
@@ -184,13 +183,14 @@ def buy_server(workspace_id, workspace_name):
 def get_servers():
     query = """
     SELECT * FROM (
-        SELECT servers_configuration.server_conf_id AS server_conf_id, cpu, gpu, ram_mb, ssd_storage_mb, os, price, MAX(closed_on) as closed_on 
+        SELECT servers_configuration.server_conf_id AS server_conf_id, cpu, gpu, ram_mb, ssd_storage_mb, os, price, 
+				CASE WHEN MAX(CASE WHEN closed_on IS NULL THEN 1 ELSE 0 END) = 0 THEN MAX(closed_on) END as closed_on 
                 FROM servers_configuration 
-                INNER JOIN servers ON servers.server_conf_id = servers_configuration.server_conf_id
-                INNER JOIN orders_servers ON orders_servers.server_id = servers.server_id
+                LEFT JOIN servers ON servers.server_conf_id = servers_configuration.server_conf_id
+                LEFT JOIN orders_servers ON orders_servers.server_id = servers.server_id
                 WHERE servers.server_on
                 GROUP BY servers_configuration.server_conf_id
-    ) AS servers_closed_on WHERE closed_on < NOW();
+    ) AS servers_closed_on WHERE closed_on < NOW() OR closed_on IS NULL;
     """
     results = db.engine.execute(query).fetchall()
     results = [dict(res) for res in results]
@@ -209,10 +209,35 @@ def get_config(config_id):
         servers_configuration 
         LEFT JOIN servers ON servers.server_conf_id = servers_configuration.server_conf_id
         LEFT JOIN orders_servers ON servers.server_id = orders_servers.server_id
-		GROUP BY servers_configuration.server_conf_id, servers.server_id
-        WHERE servers_configuration.server_conf_id = %s;
+        WHERE servers_configuration.server_conf_id = %s
+		GROUP BY servers_configuration.server_conf_id, servers.server_id;
     """
-    ...
+    query_result = db.engine.execute(query, config_id).fetchall()
+    results = {}
+    for row in query_result:
+        if results.get(row["config_id"], False):
+            results[row["config_id"]]["servers"].append({
+                        "is_busy": row["is_busy"],
+                        "server_id": row["server_id"],
+                        "server_on": row["server_on"]
+                    })
+        else:
+            results[row["config_id"]] = {
+                "server_conf_id": row["config_id"],
+                "cpu": row["cpu"],
+                "gpu": row["gpu"],
+                "ram_mb": row["ram_mb"],
+                "ssd_storage_mb": row["ssd_storage_mb"],
+                "os": row["os"],
+                "price": row["price"],
+                "order_counter": row["order_counter"],
+                "servers": [] if row["server_id"] is None else [{
+                        "is_busy": row["is_busy"],
+                        "server_id": row["server_id"],
+                        "server_on": row["server_on"]
+                    }],
+            }
+    return render_template("config_view.html", result=results[row["config_id"]], config_id=config_id)
 
 
 @main.route("/admin/config-<int:config_id>/edit", methods=["POST"])
@@ -220,7 +245,16 @@ def get_config(config_id):
 def edit_config(config_id):
     if not current_user.admin:
         return redirect(url_for("main.profile"))
-    ...
+    ServerConfig.query.filter_by(server_conf_id=config_id).update({
+        "cpu": request.form.get("cpu"),
+        "gpu": request.form.get("gpu"),
+        "os": request.form.get("os"),
+        "price": request.form.get("price", float),
+        "ssd_storage_mb": request.form.get("ssd", int),
+        "ram_mb": request.form.get("ram", int),
+    })
+    db.session.commit()
+    return redirect(url_for("main.get_config", config_id=config_id))
 
 
 @main.route("/admin/config-<int:config_id>/delete", methods=["POST"])
@@ -232,3 +266,40 @@ def delete_config(config_id):
     db.session.delete(config)
     db.session.commit()
     return redirect(url_for("main.admin"))
+
+
+@main.route("/admin/config-<int:config_id>/create-server", methods=["POST"])
+@login_required
+def create_server(config_id):
+    if not current_user.admin:
+        return redirect(url_for("main.profile"))
+    server = Server(server_conf_id=config_id, server_on=True)
+    db.session.add(server)
+    db.session.commit()
+    return redirect(url_for("main.get_config", config_id=config_id))
+
+
+@main.route("/admin/server-update", methods=["DELETE"])
+@login_required
+def delete_server():
+    if not current_user.admin:
+        return redirect(url_for("main.profile"))
+    server_id = request.json.get("server_id")
+    server = Server.query.filter_by(server_id=server_id).first()
+    db.session.delete(server)
+    db.session.commit()
+    return ('', 204)
+
+
+@main.route("/admin/server-update", methods=["PUT"])
+@login_required
+def update_server():
+    if not current_user.admin:
+        return redirect(url_for("main.profile"))
+    server_id = request.json.get("server_id")
+    server_on = request.json.get("server_on")
+    server = Server.query.filter_by(server_id=server_id).update({
+        "server_on": (not server_on),
+    })
+    db.session.commit()
+    return ('', 204)

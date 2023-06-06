@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<div id="modal-edit-server" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-content mychange">
+    </div>
+    
+    <button class="modal-close is-large" aria-label="close"></button>
+</div>
+
+<div class="box">
+    <p class="title has-text-grey-darker">Server config</p>
+    <form method="POST" action="{{ url_for('main.edit_config', config_id=config_id) }}">
+        <div class="columns">
+            <div class="column">
+                <div class="field">
+                    <label class="label">CPU:</label>
+                    <div class="control">
+                        <input class="input is-medium" type="text" name="cpu" placeholder="CPU" autofocus="" value="{{ result['cpu'] }}">
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label">GPU:</label>
+                    <div class="control">
+                        <input class="input is-medium" type="text" name="gpu" placeholder="GPU" autofocus="" value="{{ result['gpu'] }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="columns">
+            <div class="column">
+                <!--In fully db it will be generated-->
+                <div class="field">
+                    <label class="label">OS:</label>
+                    <div class="control">
+                    <div class="select">
+                        <select name="os">
+                        <option value="{{ result['os'] }}">{{ result['os'] }}</option>
+                        <option value="Windows">Windows</option>
+                        <option value="Debian">Debian</option>
+                        <option value="Ubuntu">Ubuntu</option>
+                        <option value="Astra Linux">Astra Linux</option>
+                        </select>
+                    </div>
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label">RAM (mb):</label>
+                    <div class="control">
+                        <input name="ram" class="number is-medium" min="8000" max="256000" type="number" placeholder="RAM in mb" value="{{ result['ram_mb'] }}">
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label">SSD (mb):</label>
+                    <div class="control">
+                        <input name="ssd" class="number is-medium" type="number" placeholder="SSD in mb" value="{{ result['ssd_storage_mb'] }}">
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label">Price (rubels):</label>
+                    <div class="control">
+                        <input name="price" class="number is-medium" type="number" placeholder="Price in rubels" value="{{ result['price'] }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="is-centered is-half">
+            <button class="button is-info is-medium">Save changes</button>
+        </div>
+    </form>
+    <form method="POST" action="{{ url_for('main.delete_config', config_id=config_id) }}">
+        <div class="is-centered is-half">
+            <button class="button is-danger is-medium">Delete</button>
+        </div>
+    </form>
+</div>
+
+<div class="box">
+    <p class="title has-text-grey-darker">Servers</p>
+    <form method="POST" action="{{ url_for('main.create_server', config_id=config_id) }}">
+        <button class="button is-medium is-link is-centered is-half">Create server</button>
+    </form>
+    <div class="tags are-medium">
+        {% for server in result['servers'] %}
+            {% if not server['is_busy'] and server['server_on'] %}
+                {% set tag_color = 'is-success' %}
+            {% elif server['is_busy'] and server['server_on'] %}
+                {% set tag_color = 'is-warning' %}
+            {% else %}
+                {% set tag_color = 'is-danger' %}
+            {% endif %}
+            <span class="tag {{ tag_color }}">
+                <a class="server-turn-button" server-id="{{ server['server_id'] }}" server-on="{{ server['server_on'] }}">server-{{ server["server_id"] }}</a>
+                <button class="delete server-delete-button" server-id="{{ server['server_id'] }}"></button>
+            </span>
+        {% endfor %}
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/modal-js-script.js') }}"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
+<script>
+  $('.server-turn-button').click( function() {
+    var server_id = jQuery(this).attr('server-id');
+    var server_on = jQuery(this).attr('server-on') === "True";
+
+    $.ajax({
+        url: '{{ url_for("main.update_server") }}',
+        type: 'PUT',
+        contentType: "application/json",
+        data: JSON.stringify({
+            "server_id": server_id,
+            "server_on": server_on
+        }),
+        success: function(data) {
+            location.reload();
+        }
+    });
+  });
+
+  $('.server-delete-button').click( function() {
+    var server_id = jQuery(this).attr('server-id');
+    $.ajax({
+        url: '{{ url_for("main.delete_server") }}',
+        type: 'DELETE',
+        contentType: "application/json",
+        data: JSON.stringify({
+            "server_id": server_id
+        }),
+        success: function(data) {
+            location.reload();
+        }
+    });
+  });
+</script>
+{% endblock %}
